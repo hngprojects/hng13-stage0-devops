@@ -9,7 +9,7 @@
 This project demonstrates the deployment of a basic NGINX web server on a cloud platform as part of the HNG13 DevOps Stage 0 challenge. It showcases fundamental server configuration and deployment skills.
 
 ## Server Details
-- **Server IP/Domain:**http://98.90.196.112/(server will be added after deployment)
+- **Server IP/Domain:**http://98.90.196.112    (server will be added after deployment)
 - **Status:** Live and publicly accessible
 
 ## Challenge Requirements
