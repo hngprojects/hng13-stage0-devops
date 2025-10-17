@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Environment variables
+.env
+
+
+### Terraform ###
+
+*.terraform
+*.tfstate
+*.tfstate.backup
+*.lock.hcl
+
+### SSH Keys
+
+*.pem
