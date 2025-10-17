@@ -7,10 +7,17 @@ __pycache__/
 
 ### Terraform ###
 
-*.terraform
+# Local .terraform directories
+**/.terraform/*
+.terraform/
+
+# .tfstate files
 *.tfstate
+*.tfstate.*
 *.tfstate.backup
-*.lock.hcl
+
+# Terraform lock files
+.terraform.lock.hcl
 
 ### SSH Keys
 
