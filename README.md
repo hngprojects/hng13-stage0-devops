@@ -4,6 +4,6 @@ Full name: Kingsley Simeon
 
 Slack username: Ubong-abasi
 
-project description: This project demonstrates setting up a GitHub workflow
+Project description: Deployment of a custom NGINX web server on AWS EC2 using Ubuntu 24.04. 
 
-server IP/domain:
+server IP/domain: http://16.170.236.212
