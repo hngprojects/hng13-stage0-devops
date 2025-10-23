@@ -1,4 +1,14 @@
-Onibon-oje Mariam Temitope
-Mariam Onibonoje
-Web Server Deployment using NGINX. Requirements: Edit the provided index.html to include: Welcome to DevOps Stage 0 - [Your Name]/[SlackUsername] Successfully deployed on [Platform Name] Deployed: [Date] 
-Place this file at: /var/www/html/index.html Run on default HTTP port (80) Display your custom content when accessed via browser
+- **Name:** Onibon-oje Mariam Temitope
+- **Slack Username:** Mariam.T
+
+## Project Description:
+
+This is a project demonstrating basic web server deployment using NGNIX.
+
+## Deployment details invovle:
+
+- **web server:** NGINX
+- **port:** 80(HTTP)
+- **server IP/Domain**http://your-server-ip/
+- **platform:** AWS
+- **status:** ACTIVE
