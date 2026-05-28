@@ -1,39 +1,611 @@
-html
-CopyEdit
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HNG13 DevOps Stage 0</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    .container {
-      text-align: center;
-      padding: 2rem;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      backdrop-filter: blur(10px);
-    }
-    h1 { margin-bottom: 1rem; }
-    .timestamp { font-size: 0.9em; opacity: 0.8; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#7C3AED">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ChronoWise">
+  <meta name="description" content="A feature-rich clock app with Alarm, Timer, Stopwatch & World Clock">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>ChronoWise</title>
+  <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome to DevOps Stage 0 - John Doe/@johndoe</h1>
-    <p>Successfully deployed on AWS</p>
-    <p class="timestamp">Deployed: 08/09/2025</p>
+<div id="app">
+
+  <!-- ── Header ── -->
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-icon">🕐</div>
+      <h1>ChronoWise</h1>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" title="Notifications" onclick="requestNotificationPermission()">🔔</button>
+      <button class="icon-btn" title="Settings" onclick="setTab('settings')">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ── Install Banner ── -->
+  <div id="install-banner" class="install-banner" style="margin:0 16px 4px;">
+    <div class="install-banner-text">
+      <strong>Add to Home Screen</strong>
+      <p>Install ChronoWise for widgets & offline use</p>
+    </div>
+    <button class="install-btn" id="install-btn">Install</button>
   </div>
+
+  <!-- ── Content ── -->
+  <div class="content">
+
+    <!-- ════ WORLD CLOCK ════ -->
+    <div id="page-clock" class="tab-page">
+      <div class="clock-display">
+        <!-- Analog -->
+        <div id="clock-analog" style="display:none;">
+          <div class="clock-face">
+            <svg id="analog-svg" class="clock-svg" viewBox="0 0 200 200"></svg>
+          </div>
+        </div>
+
+        <!-- Digital -->
+        <div id="clock-digital"></div>
+
+        <!-- Style toggle -->
+        <div class="clock-style-toggle">
+          <button class="style-btn active" data-style="digital">Digital</button>
+          <button class="style-btn" data-style="analog">Analog</button>
+        </div>
+      </div>
+
+      <!-- World Clocks -->
+      <div class="section-header">
+        <span class="section-title">World Clock</span>
+        <button class="section-action" id="add-city-btn">+ Add city</button>
+      </div>
+      <div class="world-clock-list" id="world-clock-list"></div>
+    </div>
+
+    <!-- ════ ALARM ════ -->
+    <div id="page-alarm" class="tab-page">
+
+      <!-- Next Alarm Card -->
+      <div class="card next-alarm-card" id="next-alarm-card" style="display:none;">
+        <div class="next-alarm-label">NEXT ALARM</div>
+        <div class="next-alarm-time">
+          <span id="next-alarm-time">07:00</span><span id="next-alarm-ampm" style="font-size:24px;font-weight:400;color:#94A3B8;"> AM</span>
+        </div>
+        <div class="next-alarm-info">
+          <span id="next-alarm-name">Alarm</span> · <span id="next-alarm-days">Once</span>
+        </div>
+        <div class="next-alarm-countdown" id="next-alarm-countdown">in 0 min</div>
+      </div>
+
+      <div class="section-header" style="margin-top:12px;">
+        <span class="section-title">My Alarms</span>
+        <button class="section-action" onclick="openAlarmModal(null)">+ New</button>
+      </div>
+      <div class="alarm-list" id="alarm-list"></div>
+    </div>
+
+    <!-- ════ TIMER ════ -->
+    <div id="page-timer" class="tab-page">
+      <div class="timer-display">
+
+        <!-- Ring (shown while running) -->
+        <div id="timer-ring-container" class="timer-ring-container" style="display:none;">
+          <svg class="timer-ring-svg" viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7C3AED"/>
+                <stop offset="100%" stop-color="#A855F7"/>
+              </linearGradient>
+            </defs>
+            <circle class="timer-ring-track" cx="100" cy="100" r="96"/>
+            <circle class="timer-ring-progress" id="timer-ring-prog" cx="100" cy="100" r="96"/>
+          </svg>
+          <div class="timer-center">
+            <div class="timer-time" id="timer-display-time">00:00</div>
+            <div class="timer-label">remaining</div>
+          </div>
+        </div>
+
+        <!-- Input (shown when stopped) -->
+        <div id="timer-input-section">
+          <div class="timer-input-row">
+            <div class="time-spinner">
+              <button class="icon-btn spinner-up" data-field="h">▲</button>
+              <div class="time-spinner-val" id="timer-input-h">00</div>
+              <button class="icon-btn spinner-down" data-field="h">▼</button>
+              <div class="time-spinner-label">hr</div>
+            </div>
+            <div class="time-colon">:</div>
+            <div class="time-spinner">
+              <button class="icon-btn spinner-up" data-field="m">▲</button>
+              <div class="time-spinner-val" id="timer-input-m">05</div>
+              <button class="icon-btn spinner-down" data-field="m">▼</button>
+              <div class="time-spinner-label">min</div>
+            </div>
+            <div class="time-colon">:</div>
+            <div class="time-spinner">
+              <button class="icon-btn spinner-up" data-field="s">▲</button>
+              <div class="time-spinner-val" id="timer-input-s">00</div>
+              <button class="icon-btn spinner-down" data-field="s">▼</button>
+              <div class="time-spinner-label">sec</div>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="timer-presets">
+            <button class="preset-btn" data-mins="1">1 min</button>
+            <button class="preset-btn" data-mins="3">3 min</button>
+            <button class="preset-btn" data-mins="5">5 min</button>
+            <button class="preset-btn" data-mins="10">10 min</button>
+            <button class="preset-btn" data-mins="15">15 min</button>
+            <button class="preset-btn" data-mins="20">20 min</button>
+            <button class="preset-btn" data-mins="25">25 min</button>
+            <button class="preset-btn" data-mins="30">30 min</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctrl-row">
+        <button class="ctrl-btn danger" id="timer-reset-btn" style="display:none;">↩</button>
+        <button class="ctrl-btn primary large" id="timer-start-btn">▶</button>
+      </div>
+
+      <!-- Timer labels card -->
+      <div class="card" style="margin-top:20px;">
+        <div class="section-title" style="margin-bottom:10px;">SAVED TIMERS</div>
+        <div id="saved-timers" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:14px;">☕ Coffee</span>
+            <button class="style-btn" onclick="loadPreset(4,0)">4:00</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:14px;">🍝 Pasta</span>
+            <button class="style-btn" onclick="loadPreset(8,0)">8:00</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+            <span style="font-size:14px;">🧘 Meditation</span>
+            <button class="style-btn" onclick="loadPreset(10,0)">10:00</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ STOPWATCH ════ -->
+    <div id="page-stopwatch" class="tab-page">
+      <div class="stopwatch-display">
+        <div>
+          <span class="sw-time" id="sw-time">00:00</span><span class="sw-ms" id="sw-ms">.00</span>
+        </div>
+      </div>
+
+      <div class="sw-ctrl-row">
+        <button class="ctrl-btn secondary" id="sw-lap-btn" disabled>🏁</button>
+        <button class="ctrl-btn primary large" id="sw-start-btn">▶</button>
+        <button class="ctrl-btn danger" id="sw-reset-btn" style="display:none;">↩</button>
+      </div>
+
+      <div class="laps-container" id="laps-container">
+        <div class="laps-header">
+          <span>LAP</span>
+          <span>SPLIT</span>
+          <span>LAP TIME</span>
+        </div>
+        <div id="laps-list"></div>
+      </div>
+    </div>
+
+    <!-- ════ SETTINGS ════ -->
+    <div id="page-settings" class="tab-page" style="padding-bottom:24px;">
+      <div style="padding: 12px 4px 0; font-size:22px; font-weight:700;">Settings</div>
+
+      <!-- Clock Display -->
+      <div class="settings-group">
+        <div class="settings-group-label">Clock Display</div>
+        <div class="settings-item">
+          <div class="setting-icon purple">🕐</div>
+          <div class="setting-text">
+            <div class="setting-title">Clock Style</div>
+            <div class="setting-desc">Choose how the clock looks</div>
+          </div>
+          <select class="settings-select" id="set-clock-style">
+            <option value="digital">Digital</option>
+            <option value="analog">Analog</option>
+          </select>
+        </div>
+        <div class="settings-item">
+          <div class="setting-icon purple">🔢</div>
+          <div class="setting-text">
+            <div class="setting-title">24-hour format</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="set-use24h">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="settings-item">
+          <div class="setting-icon purple">⏱</div>
+          <div class="setting-text">
+            <div class="setting-title">Show seconds</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="set-show-seconds">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="settings-item">
+          <div class="setting-icon blue">🎨</div>
+          <div class="setting-text">
+            <div class="setting-title">Clock face</div>
+          </div>
+          <select class="settings-select" id="set-clock-face">
+            <option value="gradient">Gradient</option>
+            <option value="minimal">Minimal</option>
+            <option value="bold">Bold</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Alarm -->
+      <div class="settings-group">
+        <div class="settings-group-label">Alarm</div>
+        <div class="settings-item">
+          <div class="setting-icon yellow">😴</div>
+          <div class="setting-text">
+            <div class="setting-title">Snooze duration</div>
+          </div>
+          <select class="settings-select" id="set-snooze">
+            <option value="5">5 min</option>
+            <option value="10">10 min</option>
+            <option value="15">15 min</option>
+            <option value="20">20 min</option>
+          </select>
+        </div>
+        <div class="settings-item">
+          <div class="setting-icon yellow">🔊</div>
+          <div class="setting-text">
+            <div class="setting-title">Alarm volume</div>
+          </div>
+          <select class="settings-select" id="set-volume">
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="80">80%</option>
+            <option value="100">100%</option>
+          </select>
+        </div>
+        <div class="settings-item">
+          <div class="setting-icon yellow">📳</div>
+          <div class="setting-text">
+            <div class="setting-title">Vibrate on alarm</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="set-vibrate">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Timer -->
+      <div class="settings-group">
+        <div class="settings-group-label">Timer</div>
+        <div class="settings-item">
+          <div class="setting-icon green">🎵</div>
+          <div class="setting-text">
+            <div class="setting-title">Timer end sound</div>
+          </div>
+          <select class="settings-select" id="set-timer-sound">
+            <option value="bell">Bell</option>
+            <option value="chime">Chime</option>
+            <option value="beep">Beep</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="settings-item">
+          <div class="setting-icon green">📳</div>
+          <div class="setting-text">
+            <div class="setting-title">Vibrate on timer end</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="set-timer-vib">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Night Mode -->
+      <div class="settings-group">
+        <div class="settings-group-label">Night Mode</div>
+        <div class="settings-item">
+          <div class="setting-icon blue">🌙</div>
+          <div class="setting-text">
+            <div class="setting-title">Night mode</div>
+            <div class="setting-desc">Dim display automatically</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="set-night">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="settings-item">
+          <div class="setting-icon pink">🛏</div>
+          <div class="setting-text">
+            <div class="setting-title">Bedtime mode</div>
+            <div class="setting-desc">Quiet hours for sleep</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="set-bedtime">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Theme -->
+      <div class="settings-group">
+        <div class="settings-group-label">Accent Color</div>
+        <div class="settings-item" style="flex-direction:column;align-items:flex-start;gap:12px;">
+          <div class="setting-title">Choose theme color</div>
+          <div class="theme-row">
+            <div class="theme-swatch selected" style="background:linear-gradient(135deg,#7C3AED,#A855F7);" data-theme="purple" title="Purple"></div>
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#2563EB,#60A5FA);" data-theme="blue" title="Blue"></div>
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#0D9488,#2DD4BF);" data-theme="teal" title="Teal"></div>
+            <div class="theme-swatch" style="background:linear-gradient(135deg,#E11D48,#FB7185);" data-theme="rose" title="Rose"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Widget -->
+      <div class="settings-group">
+        <div class="settings-group-label">Widget</div>
+        <div class="settings-item" onclick="showWidgetGuide()">
+          <div class="setting-icon purple">📱</div>
+          <div class="setting-text">
+            <div class="setting-title">Add home screen widget</div>
+            <div class="setting-desc">Instructions for your device</div>
+          </div>
+          <span class="setting-chevron">›</span>
+        </div>
+        <div class="settings-item" onclick="copyWidgetShortcut()">
+          <div class="setting-icon purple">🔗</div>
+          <div class="setting-text">
+            <div class="setting-title">Copy app link</div>
+            <div class="setting-desc">Share or bookmark ChronoWise</div>
+          </div>
+          <span class="setting-chevron">›</span>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="settings-group">
+        <div class="settings-group-label">About</div>
+        <div class="settings-item">
+          <div class="setting-icon blue">ℹ️</div>
+          <div class="setting-text">
+            <div class="setting-title">ChronoWise</div>
+            <div class="setting-desc">Version 1.0 · Dark Purple Edition</div>
+          </div>
+        </div>
+        <div class="settings-item" onclick="resetAllData()">
+          <div class="setting-icon red">🗑</div>
+          <div class="setting-text">
+            <div class="setting-title">Reset all data</div>
+            <div class="setting-desc">Clear alarms and settings</div>
+          </div>
+          <span class="setting-chevron">›</span>
+        </div>
+      </div>
+
+    </div>
+    <!-- end settings -->
+
+  </div><!-- end content -->
+
+  <!-- ── Bottom Nav ── -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="clock">
+      <span class="nav-icon">🌍</span>
+      <span class="nav-label">Clock</span>
+    </button>
+    <button class="nav-item" data-tab="alarm">
+      <span class="nav-icon">⏰</span>
+      <span class="nav-label">Alarm</span>
+    </button>
+    <button class="nav-item" data-tab="timer">
+      <span class="nav-icon">⏲</span>
+      <span class="nav-label">Timer</span>
+    </button>
+    <button class="nav-item" data-tab="stopwatch">
+      <span class="nav-icon">🏃</span>
+      <span class="nav-label">Stopwatch</span>
+    </button>
+    <button class="nav-item" data-tab="settings">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
+
+  <!-- ── FAB (Alarm) ── -->
+  <button class="fab" id="fab-alarm" style="display:none;" aria-label="New alarm">+</button>
+
+  <!-- ────────────────────────────────────
+       MODALS
+  ──────────────────────────────────── -->
+
+  <!-- Alarm Modal -->
+  <div class="modal-overlay" id="alarm-modal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="alarm-modal-title">New Alarm</div>
+
+      <!-- Time Picker -->
+      <div class="time-picker-row">
+        <div class="picker-drum" id="picker-hour">
+          <div class="picker-highlight"></div>
+          <div class="picker-inner"></div>
+        </div>
+        <span class="picker-sep">:</span>
+        <div class="picker-drum" id="picker-min">
+          <div class="picker-highlight"></div>
+          <div class="picker-inner"></div>
+        </div>
+      </div>
+
+      <!-- Label -->
+      <div class="form-row">
+        <div class="form-label">Label</div>
+        <input type="text" class="form-input" id="alarm-label-input" placeholder="Alarm name" maxlength="30">
+      </div>
+
+      <!-- Repeat days -->
+      <div class="form-row">
+        <div class="form-label">Repeat</div>
+        <div class="days-row">
+          <div class="day-chip" data-day="0">Su</div>
+          <div class="day-chip" data-day="1">Mo</div>
+          <div class="day-chip" data-day="2">Tu</div>
+          <div class="day-chip" data-day="3">We</div>
+          <div class="day-chip" data-day="4">Th</div>
+          <div class="day-chip" data-day="5">Fr</div>
+          <div class="day-chip" data-day="6">Sa</div>
+        </div>
+      </div>
+
+      <!-- Sound -->
+      <div class="form-row">
+        <div class="form-label">Sound</div>
+        <div class="sound-select">
+          <div class="sound-option active" data-sound="bell">
+            <span>🔔 Bell</span>
+            <span style="font-size:12px;color:var(--txt2);">Default</span>
+          </div>
+          <div class="sound-option" data-sound="chime">
+            <span>🎵 Chime</span>
+          </div>
+          <div class="sound-option" data-sound="digital">
+            <span>📟 Digital</span>
+          </div>
+          <div class="sound-option" data-sound="none">
+            <span>🔇 None</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="alarm-delete-btn" style="display:none;width:100%;padding:12px;margin-bottom:10px;border-radius:var(--radius);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);font-size:14px;font-weight:600;">
+        🗑 Delete Alarm
+      </button>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" id="alarm-cancel">Cancel</button>
+        <button class="btn-save" id="alarm-save">Save Alarm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- City Search Modal -->
+  <div class="modal-overlay" id="city-modal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Add City</div>
+      <div class="search-input-wrap">
+        <span class="si-icon">🔍</span>
+        <input type="text" class="search-input" id="city-search-input" placeholder="Search city or country…">
+      </div>
+      <div class="city-list" id="city-search-list"></div>
+    </div>
+  </div>
+
+  <!-- Timer Done Overlay -->
+  <div class="timer-done-overlay" id="timer-done-overlay">
+    <div style="text-align:center;padding:32px;">
+      <div style="font-size:80px;margin-bottom:20px;animation:ringPulse 1s infinite;">⏱</div>
+      <div style="font-size:28px;font-weight:700;margin-bottom:8px;">Time's Up!</div>
+      <div style="font-size:14px;color:var(--txt2);margin-bottom:32px;">Your timer has finished</div>
+      <button class="btn-full" id="timer-done-close">Done</button>
+    </div>
+  </div>
+
+  <!-- Alarm Ring Overlay -->
+  <div class="alarm-ring-overlay" id="alarm-ring-overlay">
+    <div class="ring-pulse">⏰</div>
+    <div class="ring-time" id="ring-time">07:00</div>
+    <div class="ring-name" id="ring-name">Alarm</div>
+    <div class="ring-actions">
+      <div class="ring-btn">
+        <button class="ring-btn-circle snooze" id="ring-snooze">😴</button>
+        <span>Snooze</span>
+      </div>
+      <div class="ring-btn">
+        <button class="ring-btn-circle dismiss" id="ring-dismiss">✕</button>
+        <span>Dismiss</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+</div><!-- end app -->
+
+<script src="app.js"></script>
+<script>
+// Helpers exposed globally for inline onclick handlers
+
+function loadPreset(m, s) {
+  state.timer.h = 0;
+  state.timer.m = m;
+  state.timer.s = s;
+  state.timer.remaining = 0;
+  state.timer.finished = false;
+  renderTimerInput();
+  updateTimerControls();
+  setTab('timer');
+}
+
+function showWidgetGuide() {
+  const ua = navigator.userAgent;
+  let msg;
+  if (/Android/i.test(ua)) {
+    msg = 'Android: Open Chrome → tap the 3-dot menu → "Add to Home Screen". Then long-press the icon on your home screen to resize it into a widget.';
+  } else if (/iPhone|iPad/i.test(ua)) {
+    msg = 'iOS: Open Safari → tap Share (↑) → "Add to Home Screen". The app icon appears on your home screen. On iOS 16+ you can add web app widgets via the Widgetkit section in the Shortcuts app.';
+  } else {
+    msg = 'Open this app in Chrome and tap "Install" to add ChronoWise to your home screen.';
+  }
+  alert(msg);
+}
+
+function copyWidgetShortcut() {
+  const url = location.href.split('?')[0];
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => toast('Link copied!'));
+  } else {
+    prompt('Copy this link:', url);
+  }
+}
+
+function resetAllData() {
+  if (!confirm('Reset all data? This will delete all alarms and settings.')) return;
+  localStorage.removeItem('cw_state');
+  location.reload();
+}
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) { toast('Notifications not supported'); return; }
+  Notification.requestPermission().then(p => {
+    if (p === 'granted') toast('Notifications enabled!');
+    else toast('Notifications blocked');
+  });
+}
+</script>
 </body>
 </html>
-
